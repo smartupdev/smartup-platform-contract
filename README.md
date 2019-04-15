@@ -2,7 +2,7 @@
 
 #### SUT 接口说明
 
-- [SUT接口](docs/SmartUpIdeaToken 接口说明.md)
+- [SUT](docs/SmartUpIdeaToken 接口说明.md)
 
 #### NTT 接口说明
 
