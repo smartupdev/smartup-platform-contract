@@ -12,7 +12,7 @@ bytes calldata extraData 买入的其他参数；
 
 事件：
 Transfer(from, to, value)
-buy(sutOwner, approvedSutAmount, bytesToUint256(extraData, 0));
+BuyCt(address(this), buyer, approvedSutAmount, tradedSut, ctAmount);
 ```
 
 #### 发起内容提案
@@ -21,13 +21,13 @@ buy(sutOwner, approvedSutAmount, bytesToUint256(extraData, 0));
 function propose(uint8 choiceNum, uint8 validTime) external returns (bytes32 _proId)
 参数说明：
 uint8 choiceNum 投票的选项数目
-uint8 validTime 
+uint8 validTime 内容提案有效时间
 
 返回值：
 bytes32 _proposalId  投票的ID
 
 事件：
- NewProposal(msg.sender, _proposalId);
+NewProposal(address(this), msg.sender, _proposalId);
 ```
 
 #### 对内容提案进行投票
@@ -40,7 +40,7 @@ uint256 ctAmount 投注CT数量
 bytes32 _proposalId 投注的id；
 
 事件：
-NewVoter(mychoice, ctAmount, msg.sender, _proposalId);
+NewVoter(address(this), mychoice, ctAmount, msg.sender, _proposalId);
 ```
 
 #### 内容提案结束取回CT
@@ -51,7 +51,7 @@ withdrawProposalCt(bytes32 _proposalId)external
 bytes32 _proposalId 投票的ID
 
 事件：
-WithDraw(voter, total, _proposalId); 
+WithDraw(address(this), msg.sender, total, _proposalId); 
 ```
 
 #### 获取投票内容详情
@@ -74,6 +74,9 @@ address _origin  投票发起人；
 function proposePayout(uint256 amount) external
 参数说明：
 uint256 amount  请求支出SUT的数目；
+
+事件:
+ProposePayout(address(this), msg.sender, amount);
 ```
 
 #### 查看投票时间段
@@ -107,6 +110,9 @@ uint8[] memory 投票详情
 function vote(bool approve) external
 参数说明：
 bool approve 是否同意
+
+事件:
+JurorVote(address(this), msg.sender, approve);
 ```
 
 #### 对投票结果进行总结
@@ -119,6 +125,8 @@ function conclude() external
 
 ```
 function dissolve() external 
+事件:
+DissolveMarket(address(this),  sutBalance);
 ```
 
 #### 卖出CT
