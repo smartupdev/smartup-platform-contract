@@ -198,7 +198,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
     
     //vote for proposal
     function voteForProposal(uint8 mychoice, uint256 ctAmount, bytes32 _proposalId) external {
-        require(ctAmount >= MIMDEAL_CT && ctAmount % MIMDEAL_CT == 0);
+        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
         require(now <= proposalId[_proposalId].validTime, "more than voting period!");
         require(_balances[msg.sender] > ctAmount, "not enough ct!");
         require(1 <= mychoice && mychoice <= proposalId[_proposalId].score.length);
@@ -491,10 +491,9 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     function buy(address buyer, uint256 approvedSutAmount, uint256 ctAmount) private whenTrading {
 
-        require(ctAmount >= MIMDEAL_CT && ctAmount % MIMDEAL_CT == 0);
+        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
 
-        uint256 i = _totalSupply.add(MIMDEAL_CT);
-
+        uint256 i = _totalSupply.add(ONE_CT);
         uint256 j = i.add(ctAmount);
 
         uint256 tradedSut = uint256(i.calcSUT(j));
@@ -525,14 +524,14 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     function _sell(address seller, uint256 ctAmount) private whenTrading {
 
-        require(ctAmount >= MIMDEAL_CT && ctAmount % MIMDEAL_CT == 0);
+        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
 
         require(_totalSupply >= ctAmount);
 
         require(_balances[seller] >= ctAmount);
         
 
-        uint256 j = _totalSupply.add(MIMDEAL_CT);
+        uint256 j = _totalSupply.add(ONE_CT);
 
         uint256 i = j.sub(ctAmount);
 
@@ -561,9 +560,9 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     function bidQuote(uint256 ctAmount) public view returns (uint256) {
 
-        require(ctAmount >= MIMDEAL_CT && ctAmount % MIMDEAL_CT == 0);
+        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
 
-        uint256 i = _totalSupply.add(MIMDEAL_CT);
+        uint256 i = _totalSupply.add(ONE_CT);
 
         uint256 j = i.add(ctAmount);
 
@@ -573,11 +572,11 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     function askQuote(uint256 ctAmount) public view returns (uint256) {
 
-        require(ctAmount >= MIMDEAL_CT && ctAmount % MIMDEAL_CT == 0);
+        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
 
         require(_totalSupply >= ctAmount);
 
-        uint256 j = _totalSupply.add(MIMDEAL_CT);
+        uint256 j = _totalSupply.add(ONE_CT);
 
         uint256 i = j.sub(ctAmount);
 
