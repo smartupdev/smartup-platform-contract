@@ -103,6 +103,8 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     event DissolveMarket(address _ctAddress,  uint256 _sutAmount);
 
+    event CtConclude(address _ctAddress, uint256 _ctAmount, bool _success);
+
     constructor(address owner, address marketCreator) public Pausable(owner, true) {
 
         creator = marketCreator;
@@ -429,6 +431,10 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
             totalPaidSut = totalPaidSut.add(proposedPayoutAmount);
 
+            emit CtConclude(address(this), proposedPayoutAmount, true);
+
+        }else{
+            emit CtConclude(address(this), proposedPayoutAmount, false);
         }
 
         // cleanup once concluded
@@ -444,7 +450,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
         votingStart = 0;
 
         payoutNotRequested = true;
-
+       
     }
 
 

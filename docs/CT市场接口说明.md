@@ -119,6 +119,8 @@ JurorVote(address(this), msg.sender, approve);
 
 ```
 function conclude() external
+事件：CtConclude(address(this), proposedPayoutAmount, true); 支出请求成功
+      CtConclude(address(this), proposedPayoutAmount, true); 支出请求失败
 ```
 
 #### 解散市场
