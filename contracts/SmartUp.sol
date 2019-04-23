@@ -86,7 +86,7 @@ contract SmartUp is Ownable, ISmartUp, tokenRecipient, PlatformConfig, GlobalCon
 
     event CloseFlagging(address _ctAddress, address _closer);
 
-    event MakeVote (address _ctAddress, address _voter, uint8 _appealRount,  bool _details);
+    event MakeVote (address _ctAddress, address _voter, uint8 _appealRound,  bool _details);
 
 
     modifier onlyExistingMarket() {

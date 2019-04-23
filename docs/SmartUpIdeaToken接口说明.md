@@ -9,7 +9,11 @@ address _to  转账到的地址
 uint256 _value 转账的金额大小
 
 事件：
-Transfer(_from, _to, _value)
+Transfer(address indexed from, address indexed to, uint256 value)
+参数说明：
+address indexed from  发起转账的人
+address indexed to   转账去处
+uint256 value  转账的金额
 ````
 
 #### 从账户A转到账户B
@@ -71,7 +75,10 @@ true   成功
 false  失败
 
 事件：
-Burn(msg.sender, _value)
+Burn(address indexed from, uint256 value);
+参数说明：
+address indexed from  发起burn的地址
+uint256 value burn的数量
 ````
 
 #### 从账户A销毁代币

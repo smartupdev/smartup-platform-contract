@@ -34,8 +34,11 @@ function confirmOwnershipTransfer() external
 
 ````
 function renounceOwnership() public onlyOwner
-事件：
-OwnershipTransferred(_owner, address(0))
+事件1：
+OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+参数说明：
+address indexed previousOwner  之前的owner
+address indexed newOwner    现在的owner
 ````
 
 #### 查看当前Owner
@@ -54,7 +57,9 @@ function addGrader(address grader) external onlyOwner
 address grader 新添加的Grader地址
 
 事件：
-AddGrader(grader)
+AddGrader(address _newGrader)
+参数说明：
+address _newGrader   添加的grader的地址
 ```
 
 #### 移除Grader
@@ -65,7 +70,9 @@ function removeGrader(address grader) external onlyOwner
 address  grader 移除的地址
 
 事件：
-RemoveGrader(grader)
+RemoveGrader(address _removeGrader);
+参数说明：
+address _removeGrader  移除的garder地址
 ```
 
 #### 查看信用分
@@ -84,11 +91,14 @@ uint256  信用分数
 ```
 function raiseCredit(address user, uint256 score) external whenMigrationUnstarted onlyGrader
 参数说明：
-address user 所要提升的地址
-uint256 score 所要增加的分数
+address user 需要提升的地址
+uint256 score 需要增加的分数
 
 事件：
-RaiseCredit(user, score);
+RaiseCredit(address _raiseAddress, uint256 _score);
+参数说明：
+address _raiseAddress   需要提升信用分的地址
+uint256 _score     需要提升的分数
 ```
 
 #### 减少信用分
@@ -96,11 +106,14 @@ RaiseCredit(user, score);
 ```
 function lowerCredit(address user, uint256 score) external whenMigrationUnstarted onlyGrader
 参数说明：
-address user 所要减少信用分的地址
-uint256 score 所要减少的分数
+address user  需要减少信用分的地址
+uint256 score 需要减少的分数
 
 事件：
-LowerCredit(user, score)；
+LowerCredit(address _lowerAddress, uint256 _score);
+参数说明：
+address _lowerAddress  需要减少信用分的地址
+uint256 _score    需要减少的分数
 ```
 
 #### owner 调整默认的信用分值
@@ -111,7 +124,9 @@ function adjustDefaultNtt(uint256 newDefault) external onlyOwner
 uint256 newDefault 所设置的默认信用分值
 
 事件：
-AdjustDefaultNtt(newDefault)
+AdjustDefaultNtt(uint256 _newDefault);
+参数说明：
+uint256 _newDefault  所设置的默认信用分值
 ````
 
 #### 查看账户是否能进行当前操作
@@ -137,6 +152,9 @@ string  calldata action   所要设置的行为描述
 uint256 min  ntt分数值
 
 事件：
-SetNttRquirement(action, min)
+SetNttRquirement(string _action, uint256 _ntt);
+参数说明：
+string _action 设置的行为描述
+uint256 _ntt 所需要的ntt值
 ```
 

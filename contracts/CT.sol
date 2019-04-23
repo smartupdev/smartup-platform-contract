@@ -29,7 +29,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     using IterableSet for IterableSet.AddressSet;
 
-    IterableSet.AddressSet private _jurors; //pei shengyuan 
+    IterableSet.AddressSet private _jurors; 
 
     uint8 public decimals = 18;
 
@@ -37,9 +37,9 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     address public creator;
 
-    ISmartUp private _smartup; //addmenber
+    ISmartUp private _smartup; 
 
-    uint8 public ballots; //xuanju
+    uint8 public ballots; 
 
     uint256 public proposedPayoutAmount;
 
@@ -68,7 +68,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     }
 
-    //uint256 internal DEFAULT_VALITIME = 15 minutes;
+    
     mapping(bytes32 => Proposal)  proposalId;
 
     mapping(address => mapping(bytes32 => uint256[]))  voterInfo;
@@ -103,7 +103,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     event DissolveMarket(address _ctAddress,  uint256 _sutAmount);
 
-    event CtConclude(address _ctAddress, uint256 _ctAmount, bool _success);
+    event CtConclude(address _ctAddress, uint256 _sutAmount, bool _success);
 
     constructor(address owner, address marketCreator) public Pausable(owner, true) {
 
@@ -210,7 +210,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
         _balances[address(this)] = _balances[address(this)].add(ctAmount);
 
         if(voterInfo[msg.sender][_proposalId].length == 0) {
-            // when this voter never vote for this proposal
+            // when this voter never vote for this propose
             uint256[] memory myInfo = new uint256[](proposalId[_proposalId].score.length);
            
             voterInfo[msg.sender][_proposalId] = myInfo;
@@ -222,13 +222,13 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
             perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
 
         }else if(voterInfo[msg.sender][_proposalId][mychoice - 1] == 0){
-            //when this voter never vote for this choice of this proposal
+            //when this voter never vote for this choice of this propose
             voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
 
             perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
 
         }else{
-           // when this voter have already vote for this choice of this proposal
+           // when this voter have already vote for this choice of this propose
             voterInfo[msg.sender][_proposalId][mychoice - 1] = voterInfo[msg.sender][_proposalId][mychoice - 1].add(ctAmount);
             perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
         }
@@ -240,15 +240,15 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     }
     
-
+    //when time is up withdraw, anyone can call this function to withdraw;
     function withdrawProposalCt(bytes32 _proposalId)external{
-
+        //this proprose is exist
         require(proposalId[_proposalId].validTime != 0);
-
+        // time is up
         require(now > proposalId[_proposalId].validTime, "proposal still in voting now!");
-
+        // not withdraw yet
         require(isVoterWithdraw[_proposalId] == false, "you are alreday withdraw!");
-
+        //count the withdraw ct
         uint256 total;
 
         for(uint256 i = 0; i < proposalId[_proposalId].voters.length; i++ ){
@@ -271,7 +271,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
     }
 
-
+    //aquire the propose details
     function getProposal(bytes32 _proposalId) external view returns(uint256 _validTime, uint256[] memory voteDetails, address[] memory _voters, address _origin){
 
         return (proposalId[_proposalId].validTime, proposalId[_proposalId].score, proposalId[_proposalId].voters, proposalId[_proposalId].origin);

@@ -45,16 +45,47 @@ bytes calldata extraData； 包含操作市场的指令； 1结尾创建市场�
 
 事件：
 1.当为创建市场时：
-Transfer(from, to, value)；
-MarketCreated(ctAddress, marketCreator, initialDeposit);
+事件1：
+Transfer(address indexed from, address indexed to, uint256 value)
+参数说明：
+address indexed from  发起转账的人
+address indexed to   转账去处
+uint256 value  转账的金额
+事件2：
+MarketCreated(address marketAddress, address marketCreator, uint256 initialDeposit);
+参数说明：
+address marketAddress   创建的市场地址
+address marketCreator   创建人的地址
+uint256 initialDeposit  创建市场的sut
 
 2.当为标记市场时：
-Transfer(from, to, value);
-Flagging(ctAddress, flagger, depositAmount, marketData.flaggerDeposit);
+事件1：
+Transfer(address indexed from, address indexed to, uint256 value)
+参数说明：
+address indexed from  发起转账的人
+address indexed to   转账去处
+uint256 value  转账的金额;
+事件2：
+Flagging(address _projectAddress, address _flagger, uint256 _deposit, uint256 _totalDeposit);
+参数说明：
+address _projectAddress  ct市场的地址
+address _flagger    发起标记市场的人的地址
+uint256 _deposit    标记押金
+uint256 _totalDeposit  标记总押金
 
 3.当为申诉市场时：
-Transfer(from, to, value);
-AppealMarket( ctAddress,  appealer,  depositAmount);
+事件1：
+Transfer(address indexed from, address indexed to, uint256 value)
+参数说明：
+address indexed from  发起转账的人
+address indexed to   转账去处
+uint256 value  转账的金额
+事件2：
+AppealMarket(address _ctAddress, address _appealer, uint256 _depositAmount);
+参数说明：
+address _ctAddress  ct市场地址
+address _appealer   申诉人地址
+uint256 _depositAmount  押金
 ```
 
 #### 标记市场未达到最少标记资金并超时时撤销标记
@@ -65,7 +96,10 @@ function closeFlagging(address ctAddress) external
 address ctAddress CT市场地址；
 
 事件：
-CloseFlagging(ctAddress, msg.sender);
+CloseFlagging(address _ctAddress, address _closer);
+参数说明：
+address _ctAddress  标记的市场地址
+address _closer   撤销标记市场的地址
 ```
 
 #### 投票
@@ -77,7 +111,12 @@ address ctAddress CT市场地址；
 bool dissolve   true 同意解散市场， false 不同意解散市场；
 
 事件：
-MakeVote (ctAddress, msg.sender, marketData.appealRound, dissolve);
+MakeVote (address _ctAddress, address _voter, uint8 _appealRound,  bool _details);
+参数说明：
+address _ctAddress  ct市场地址
+address _voter      投票人
+uint8 _appealRound  投票阶段
+bool _details       是否同意解散市场（true 同意， false 不同意）
 ```
 
 #### 对投票结果进行判断并进行下一步操作
