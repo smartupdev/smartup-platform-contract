@@ -15,6 +15,7 @@ library RateCalc {
     
     int256 constant a = 74999921875000;
     int256 constant b = 15625000 / 2;
+    int256 constant MULTIPLES = 1000;    
     
 
     /**
@@ -25,6 +26,6 @@ library RateCalc {
         pure
         returns (int256)
     {   
-        return (a * (int256(newCtCount) * (int256(newCtCount.ln(FACTOR)) - f1) - int256(existingCtCount) * (int256(existingCtCount.ln(FACTOR)) - f1)) + b * int256(newCtCount * newCtCount - existingCtCount * existingCtCount)) / f2;
+        return MULTIPLES * ((a * (int256(newCtCount) * (int256(newCtCount.ln(FACTOR)) - f1) - int256(existingCtCount) * (int256(existingCtCount.ln(FACTOR)) - f1)) + b * int256(newCtCount * newCtCount - existingCtCount * existingCtCount)) / f2);
     }
 }
