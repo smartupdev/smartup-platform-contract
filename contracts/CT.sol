@@ -14,7 +14,6 @@ import "./ISmartUp.sol";
 
 import "./TokenRecipient.sol";
 
-import "./LockRequestable.sol";
 
 
 /**
@@ -23,7 +22,7 @@ import "./LockRequestable.sol";
 
  */
 
-contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, LockRequestable {
+contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
     using RateCalc for uint256;
 
@@ -67,11 +66,10 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
         address   origin; 
 
     }
-
     
     mapping(bytes32 => Proposal)  proposalId;
 
-    mapping(address => mapping(bytes32 => uint256[]))  voterInfo;
+    //mapping(address => mapping(bytes32 => uint256[]))  voterInfo;
 
     mapping(address => mapping(bytes32 => uint256))  perProposalVoterCt;
 
@@ -164,7 +162,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
         require( 2 <= choiceNum  && choiceNum <= 5, "proposal must in 2 - 5!");
 
-        require(validTime == 0 || validTime == 3 || validTime == 5 || validTime == 7);
+        require(validTime == 3 || validTime == 5 || validTime == 7);
 
         _proId = _propose(choiceNum, validTime);
 
@@ -173,7 +171,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
     function _propose(uint8 _choiceNum, uint8 _validTime) private returns (bytes32 _proposalId) {
         uint256 time;
 
-        if (_validTime == 0 || _validTime ==7) {
+        if (_validTime ==7) {
             //time = 7 days;
             time = 7 minutes;
         }else if(_validTime == 3) {
@@ -184,7 +182,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
             time = 5 minutes;
         }
 
-        _proposalId = generateLockId();
+        _proposalId = keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, now));
 
         uint256[] memory _score = new uint256[](uint256(_choiceNum));
 
@@ -201,37 +199,50 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
     //vote for proposal
     function voteForProposal(uint8 mychoice, uint256 ctAmount, bytes32 _proposalId) external {
         require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
+
         require(now <= proposalId[_proposalId].validTime, "more than voting period!");
+
         require(_balances[msg.sender] > ctAmount, "not enough ct!");
+
         require(1 <= mychoice && mychoice <= proposalId[_proposalId].score.length);
 
         _balances[msg.sender] = _balances[msg.sender].sub(ctAmount);
 
         _balances[address(this)] = _balances[address(this)].add(ctAmount);
 
-        if(voterInfo[msg.sender][_proposalId].length == 0) {
-            // when this voter never vote for this propose
-            uint256[] memory myInfo = new uint256[](proposalId[_proposalId].score.length);
-           
-            voterInfo[msg.sender][_proposalId] = myInfo;
+        if (perProposalVoterCt[msg.sender][_proposalId] == 0) {
 
-            voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
-            
-            proposalId[_proposalId].voters.push(msg.sender);
+             proposalId[_proposalId].voters.push(msg.sender);
 
-            perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
+             perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
 
-        }else if(voterInfo[msg.sender][_proposalId][mychoice - 1] == 0){
-            //when this voter never vote for this choice of this propose
-            voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
-
-            perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
-
-        }else{
-           // when this voter have already vote for this choice of this propose
-            voterInfo[msg.sender][_proposalId][mychoice - 1] = voterInfo[msg.sender][_proposalId][mychoice - 1].add(ctAmount);
-            perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
+        }else {
+             perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
         }
+
+        // if(voterInfo[msg.sender][_proposalId].length == 0) {
+        //     // when this voter never vote for this propose
+        //     uint256[] memory myInfo = new uint256[](proposalId[_proposalId].score.length);
+           
+        //     voterInfo[msg.sender][_proposalId] = myInfo;
+
+        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
+            
+        //     proposalId[_proposalId].voters.push(msg.sender);
+
+        //     perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
+
+        // }else if(voterInfo[msg.sender][_proposalId][mychoice - 1] == 0){
+        //     //when this voter never vote for this choice of this propose
+        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
+
+        //     perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
+
+        // }else{
+        //    // when this voter have already vote for this choice of this propose
+        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = voterInfo[msg.sender][_proposalId][mychoice - 1].add(ctAmount);
+        //     perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
+        // }
 
         // add the vote for this choice;
         proposalId[_proposalId].score[mychoice - 1] = proposalId[_proposalId].score[mychoice - 1].add(ctAmount);
@@ -249,7 +260,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
         // not withdraw yet
         require(isVoterWithdraw[_proposalId] == false, "you are alreday withdraw!");
         //count the withdraw ct
-        uint256 total;
+        uint256 total = 0;
 
         for(uint256 i = 0; i < proposalId[_proposalId].voters.length; i++ ){
 
@@ -336,8 +347,6 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
     function drawJurors(address seeder) private {
 
         require(_tokenHolders.size() >= JUROR_COUNT, "Not enough remaining members to choose from");
-
-
 
         uint256 seed = uint256(keccak256(abi.encodePacked(blockhash(block.number - 1), seeder)));
 
@@ -542,15 +551,19 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
         uint256 i = j.sub(ctAmount);
 
         uint256 tradedSut = uint256(i.calcSUT(j));
+        
+        uint256 exchangeSut = tradedSut.mul(SUT.balanceOf(address(this))).div(totalTraderSut);
 
-        SUT.transfer(seller, tradedSut);
+        if (exchangeSut > SUT.balanceOf(address(this))) {
+            SUT.transfer(seller, SUT.balanceOf(address(this)));
+        }else{
+            SUT.transfer(seller, exchangeSut);
+        }
 
         _totalSupply = _totalSupply.sub(ctAmount);
 
-
         _balances[seller] = _balances[seller].sub(ctAmount);
         
-
         totalTraderSut = totalTraderSut.sub(tradedSut);
         
         if (_balances[seller] == 0) {
@@ -586,7 +599,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, Lock
 
         uint256 i = j.sub(ctAmount);
 
-        return uint256(i.calcSUT(j));
+        return uint256(i.calcSUT(j)).mul(SUT.balanceOf(address(this))).div(totalTraderSut);
 
     }
 
