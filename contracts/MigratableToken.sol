@@ -15,6 +15,7 @@ contract MigratableToken is ERC20 {
 
     // Target contract
     address public migrationTarget;
+    address public migrationFrom;
     uint256 public totalMigrated;
 
     IterableSet.AddressSet internal _tokenHolders;
@@ -23,6 +24,7 @@ contract MigratableToken is ERC20 {
     event Migrate(address indexed from, address indexed to, uint256 value);
     event StartMigration();
     event StopMigration();
+    event SetMigrationFrom(address _from);
 
     /**
      * @dev modifier to allow actions only when the migration is started
@@ -70,7 +72,7 @@ contract MigratableToken is ERC20 {
             if (balanceOf(tokenHolder) > 0) {
                 uint256 amount = balanceOf(tokenHolder);
                 // finalizeMigration may or may not clear the balance of the token holder 
-                finalizeMigration(tokenHolder, amount);
+               //finalizeMigration(tokenHolder, amount);
 
                 totalMigrated = i.add(1);
                 MigrationTarget(migrationTarget).migrateFrom(tokenHolder, amount);
@@ -81,8 +83,14 @@ contract MigratableToken is ERC20 {
     }
 
 
-    function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal;
+    //function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal;
 
+    function setMigrationFrom(address _from)onlyOwner whenMigrationUnstarted external {
+        require(_from != address(0));
+        migrationFrom = _from;
+
+        emit SetMigrationFrom(_from);
+    }
 
     /**
      * @dev called by the owner to stop migration, returns to normal state
@@ -93,8 +101,7 @@ contract MigratableToken is ERC20 {
         _tokenHolders.unfreeze();
         emit StopMigration();
     }
-    
-    
+   
     function totalHolders() external view returns(uint256) {
         return _tokenHolders.size();
     }

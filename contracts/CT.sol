@@ -14,6 +14,8 @@ import "./ISmartUp.sol";
 
 import "./TokenRecipient.sol";
 
+import "./PlatformConfig.sol";
+
 
 
 /**
@@ -22,7 +24,11 @@ import "./TokenRecipient.sol";
 
  */
 
-contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
+interface CtSetSut {
+    function migrateSetSut(uint256 setTradeSut, uint256 setPaidSut, uint256 supplyAmount) external;
+}
+
+contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig, PlatformConfig{
 
     using RateCalc for uint256;
 
@@ -31,6 +37,8 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
     IterableSet.AddressSet private _jurors; 
 
     uint8 public decimals = 18;
+
+    uint256 constant LOWERSCORE = 10;
 
     uint8[] private _jurorsVote;
 
@@ -54,27 +62,6 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
     bool public dissolved;
 
-   // propose var
-    struct Proposal {
-
-        uint256  validTime; //validity 3 days;
-
-        uint256[] score;     //choice vote count;
-
-        address[] voters;
-
-        address   origin; 
-
-    }
-    
-    mapping(bytes32 => Proposal)  proposalId;
-
-    //mapping(address => mapping(bytes32 => uint256[]))  voterInfo;
-
-    mapping(address => mapping(bytes32 => uint256))  perProposalVoterCt;
-
-    mapping(bytes32 => bool)  isVoterWithdraw;
-
     modifier whenTrading() {
 
         require(payoutNotRequested && !dissolved);
@@ -89,12 +76,6 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
     event SellCt(address _ctAddress, address _sell, uint256 _sut, uint256 _ct);
 
-    event NewProposal(address _ctAddress, address _proposer, bytes32 _proId);
-
-    event NewVoter(address _ctAddress, uint8 _choice, uint256 _ct, address _voter, bytes32 _proId);
-
-    event WithDraw(address _ctAddress, address _drawer, uint256 _totoal, bytes32 _proId);
-
     event ProposePayout(address _ctAddress, address _proposer, uint256 _amount);
 
     event JurorVote(address _ctAddress, address _juror, bool _approve);
@@ -103,7 +84,11 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
     event CtConclude(address _ctAddress, uint256 _sutAmount, bool _success);
 
-    constructor(address owner, address marketCreator) public Pausable(owner, true) {
+    event MigrationTransferSut(address _migrateTarget, uint256 _balance);
+
+    event MigrationSetSut(address _migrationFrom, uint256 _setTradeSut, uint256 _setPaidSut,uint256 _supplyAmount);
+
+    constructor(address owner, address marketCreator) public Pausable(owner, false) {
 
         creator = marketCreator;
 
@@ -138,157 +123,13 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
     }
 
 
-    function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal {
+    function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal pure {
 
         tokenHolder;
 
         migratedAmount;
 
     }
-
-       /**********************************************************************************
-
-     *                                                                                *
-
-     * proposal session                                                                 *
-
-     *                                                                                *
-
-     **********************************************************************************/
-    // create propose 
-    function propose(uint8 choiceNum, uint8 validTime) external returns (bytes32 _proId) {
-
-        require(_tokenHolders.contains(msg.sender));
-
-        require( 2 <= choiceNum  && choiceNum <= 5, "proposal must in 2 - 5!");
-
-        require(validTime == 3 || validTime == 5 || validTime == 7);
-
-        _proId = _propose(choiceNum, validTime);
-
-    }
-
-    function _propose(uint8 _choiceNum, uint8 _validTime) private returns (bytes32 _proposalId) {
-        uint256 time;
-
-        if (_validTime ==7) {
-            //time = 7 days;
-            time = 7 minutes;
-        }else if(_validTime == 3) {
-            //time = 3 days;
-            time = 3 minutes;
-        }else{
-            //time = 5 days;
-            time = 5 minutes;
-        }
-
-        _proposalId = keccak256(abi.encodePacked(blockhash(block.number - 1), msg.sender, now));
-
-        uint256[] memory _score = new uint256[](uint256(_choiceNum));
-
-        address[] memory _voters = new address[](uint256(0));
-
-        Proposal memory newProposal = Proposal(now + time, _score, _voters, msg.sender);
-
-        proposalId[_proposalId] = newProposal;
-
-        emit NewProposal(address(this), msg.sender, _proposalId);
-
-    }
-    
-    //vote for proposal
-    function voteForProposal(uint8 mychoice, uint256 ctAmount, bytes32 _proposalId) external {
-        require(ctAmount >= MINEXCHANGE_CT && ctAmount % MINEXCHANGE_CT == 0);
-
-        require(now <= proposalId[_proposalId].validTime, "more than voting period!");
-
-        require(_balances[msg.sender] > ctAmount, "not enough ct!");
-
-        require(1 <= mychoice && mychoice <= proposalId[_proposalId].score.length);
-
-        _balances[msg.sender] = _balances[msg.sender].sub(ctAmount);
-
-        _balances[address(this)] = _balances[address(this)].add(ctAmount);
-
-        if (perProposalVoterCt[msg.sender][_proposalId] == 0) {
-
-             proposalId[_proposalId].voters.push(msg.sender);
-
-             perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
-
-        }else {
-             perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
-        }
-
-        // if(voterInfo[msg.sender][_proposalId].length == 0) {
-        //     // when this voter never vote for this propose
-        //     uint256[] memory myInfo = new uint256[](proposalId[_proposalId].score.length);
-           
-        //     voterInfo[msg.sender][_proposalId] = myInfo;
-
-        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
-            
-        //     proposalId[_proposalId].voters.push(msg.sender);
-
-        //     perProposalVoterCt[msg.sender][_proposalId] = ctAmount;
-
-        // }else if(voterInfo[msg.sender][_proposalId][mychoice - 1] == 0){
-        //     //when this voter never vote for this choice of this propose
-        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = ctAmount;
-
-        //     perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
-
-        // }else{
-        //    // when this voter have already vote for this choice of this propose
-        //     voterInfo[msg.sender][_proposalId][mychoice - 1] = voterInfo[msg.sender][_proposalId][mychoice - 1].add(ctAmount);
-        //     perProposalVoterCt[msg.sender][_proposalId] = perProposalVoterCt[msg.sender][_proposalId].add(ctAmount);
-        // }
-
-        // add the vote for this choice;
-        proposalId[_proposalId].score[mychoice - 1] = proposalId[_proposalId].score[mychoice - 1].add(ctAmount);
-
-        emit NewVoter(address(this), mychoice, ctAmount, msg.sender, _proposalId);
-
-    }
-    
-    //when time is up withdraw, anyone can call this function to withdraw;
-    function withdrawProposalCt(bytes32 _proposalId)external{
-        //this proprose is exist
-        require(proposalId[_proposalId].validTime != 0);
-        // time is up
-        require(now > proposalId[_proposalId].validTime, "proposal still in voting now!");
-        // not withdraw yet
-        require(isVoterWithdraw[_proposalId] == false, "you are alreday withdraw!");
-        //count the withdraw ct
-        uint256 total = 0;
-
-        for(uint256 i = 0; i < proposalId[_proposalId].voters.length; i++ ){
-
-        uint256 myCt = perProposalVoterCt[proposalId[_proposalId].voters[i]][_proposalId];
-
-        delete perProposalVoterCt[proposalId[_proposalId].voters[i]][_proposalId];
-
-        _balances[proposalId[_proposalId].voters[i]] = _balances[proposalId[_proposalId].voters[i]].add(myCt);
-
-        _balances[address(this)] = _balances[address(this)].sub(myCt);
-
-        total = total.add(myCt);     
-
-        }
-
-        isVoterWithdraw[_proposalId] = true;
-
-        emit WithDraw(address(this), msg.sender, total, _proposalId);      
-
-    }
-
-    //aquire the propose details
-    function getProposal(bytes32 _proposalId) external view returns(uint256 _validTime, uint256[] memory voteDetails, address[] memory _voters, address _origin){
-
-        return (proposalId[_proposalId].validTime, proposalId[_proposalId].score, proposalId[_proposalId].voters, proposalId[_proposalId].origin);
-
-    }
-
 
     /**********************************************************************************
 
@@ -483,6 +324,8 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
                 SUT.transfer(_tokenHolders.at(i), refundAmount);
 
+                NTT.lowerCredit(_tokenHolders.at(i), LOWERSCORE);
+
             }
 
         }
@@ -572,7 +415,7 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
         }
 
-        emit  SellCt(address(this), seller, tradedSut, ctAmount);
+        emit SellCt(address(this), seller, tradedSut, ctAmount);
 
     }
 
@@ -601,6 +444,42 @@ contract CT is MigratableToken, tokenRecipient, MarketConfig, GlobalConfig{
 
         return uint256(i.calcSUT(j)).mul(SUT.balanceOf(address(this))).div(totalTraderSut);
 
+    }
+
+    //migration from
+    function migrateFrom(address from, uint256 amount) external {
+        require(msg.sender == migrationFrom);
+
+        _balances[from] = amount;
+
+        _tokenHolders.add(from);
+        
+        _smartup.addMember(from);
+
+    }
+
+    function migrateTransferSut()external whenMigrating onlyOwner {
+        uint256 sutAmount = SUT.balanceOf(address(this));
+
+        require(migrationTarget != address(0));
+
+        SUT.transfer(migrationTarget, sutAmount);
+
+        CtSetSut(migrationTarget).migrateSetSut(totalTraderSut, totalPaidSut, _totalSupply);
+
+        emit MigrationTransferSut(migrationTarget,sutAmount);
+    }
+
+    function migrateSetSut(uint256 _setTradeSut, uint256 _setPaidSut, uint256 _supplyAmount)external{
+        require(msg.sender == migrationFrom);
+
+        totalTraderSut = _setTradeSut;
+
+        totalPaidSut = _setPaidSut;
+
+        _totalSupply = _supplyAmount;
+
+        emit MigrationSetSut(migrationFrom, _setTradeSut, _setPaidSut, _supplyAmount);
     }
 
 }

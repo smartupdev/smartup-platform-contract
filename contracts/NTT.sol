@@ -154,10 +154,17 @@ contract NTT is IGradeable, MigratableToken {
         return checkCredit(owner);
     }
 
+    function migrateFrom(address from, uint256 amount) external {
+        require(msg.sender == migrationFrom);
+        _initIfNotExist(from);
+        _balances[from] = amount.add(ZERO_NTT);
+    }
 
-    function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal {
+
+    function finalizeMigration(address tokenHolder, uint256 migratedAmount) internal pure{
         // doing nothing, just to get rid of compiler warnings
         tokenHolder;
         migratedAmount;
     }
+
 }

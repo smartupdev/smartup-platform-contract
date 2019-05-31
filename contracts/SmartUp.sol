@@ -784,3 +784,4 @@ contract SmartUp is Ownable, ISmartUp, tokenRecipient, PlatformConfig, GlobalCon
     }
 
 }
+
